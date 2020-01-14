@@ -16,6 +16,10 @@ from DensenetModels import DenseNet121
 from DensenetModels import DenseNet169
 from DensenetModels import DenseNet201
 
+import fire
+from glob import glob
+import shutil
+
 #-------------------------------------------------------------------------------- 
 #---- Class to generate heatmaps (CAM)
 
@@ -34,10 +38,12 @@ class HeatmapGenerator ():
         elif nnArchitecture == 'DENSE-NET-169': model = DenseNet169(nnClassCount, True).cuda()
         elif nnArchitecture == 'DENSE-NET-201': model = DenseNet201(nnClassCount, True).cuda()
           
-        model = torch.nn.DataParallel(model).cuda()
+        # model = torch.nn.DataParallel(model).cuda()
 
         modelCheckpoint = torch.load(pathModel)
         model.load_state_dict(modelCheckpoint['state_dict'])
+
+        model = torch.nn.DataParallel(model).cuda()
 
         self.model = model.module.densenet121.features
         self.model.eval()
@@ -91,14 +97,31 @@ class HeatmapGenerator ():
         
 #-------------------------------------------------------------------------------- 
 
-pathInputImage = 'test/00009285_000.png'
-pathOutputImage = 'test/heatmap.png'
-pathModel = 'models/m-25012018-123527.pth.tar'
 
-nnArchitecture = 'DENSE-NET-121'
-nnClassCount = 14
+def genHeatmap(pathInputImages, outDir, model_weights):
+    os.makedirs(outDir, exist_ok=True)
+    # pathInputImage = 'test/00009285_000.png'
+    # pathInputImage = pathInputImage
+    # pathOutputImage = 'test/heatmap1.png'
 
-transCrop = 224
+    pathModel = model_weights
 
-h = HeatmapGenerator(pathModel, nnArchitecture, nnClassCount, transCrop)
-h.generate(pathInputImage, pathOutputImage, transCrop)
+    nnArchitecture = 'DENSE-NET-121'
+    nnClassCount = 14
+
+    transCrop = 224
+
+    for pathInputImage in pathInputImages:
+        print('====> processing {}'.format(pathInputImage))
+        pathOutputImage = os.path.join(outDir, os.path.basename(pathInputImage).split('.')[0]+'_heatmap.jpg')
+        h = HeatmapGenerator(pathModel, nnArchitecture, nnClassCount, transCrop)
+        h.generate(pathInputImage, pathOutputImage, transCrop)
+        shutil.copyfile(pathInputImage, os.path.join(outDir, os.path.basename(pathInputImage)))
+
+def genHeatmapByFolder(infolder, outfolder, model_weights):
+    # infolder = '/data/zhangwd/data/xray/dr_deformable_1024/气胸/气胸_pos_train'
+    images_list = glob(os.path.join(infolder, '*.jpg'))
+    genHeatmap(images_list, outfolder, model_weights)
+
+if __name__ == '__main__':
+    fire.Fire()

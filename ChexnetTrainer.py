@@ -16,9 +16,15 @@ import torch.nn.functional as func
 
 from sklearn.metrics.ranking import roc_auc_score
 
-from DensenetModels import DenseNet121
-from DensenetModels import DenseNet169
-from DensenetModels import DenseNet201
+# from DensenetModels import DenseNet121
+# from DensenetModels import DenseNet169
+# from DensenetModels import DenseNet201
+
+
+from DensenetModelsLocal import DenseNet121
+from DensenetModelsLocal import DenseNet169
+from DensenetModelsLocal import DenseNet201
+
 from DatasetGenerator import DatasetGenerator
 
 
@@ -44,11 +50,14 @@ class ChexnetTrainer ():
 
         
         #-------------------- SETTINGS: NETWORK ARCHITECTURE
-        if nnArchitecture == 'DENSE-NET-121': model = DenseNet121(nnClassCount, nnIsTrained).cuda()
+        if nnArchitecture == 'DENSE-NET-121': model = DenseNet121(transCrop, nnClassCount, nnIsTrained).cuda()
         elif nnArchitecture == 'DENSE-NET-169': model = DenseNet169(nnClassCount, nnIsTrained).cuda()
         elif nnArchitecture == 'DENSE-NET-201': model = DenseNet201(nnClassCount, nnIsTrained).cuda()
         
-        model = torch.nn.DataParallel(model).cuda()
+        # model = torch.nn.DataParallel(model).cuda()
+        model1 = torch.nn.DataParallel(model).cuda()
+
+
                 
         #-------------------- SETTINGS: DATA TRANSFORMS
         normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
@@ -91,14 +100,15 @@ class ChexnetTrainer ():
             timestampDate = time.strftime("%d%m%Y")
             timestampSTART = timestampDate + '-' + timestampTime
                          
-            ChexnetTrainer.epochTrain (model, dataLoaderTrain, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
-            lossVal, losstensor = ChexnetTrainer.epochVal (model, dataLoaderVal, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
+            ChexnetTrainer.epochTrain (torch.nn.DataParallel(model).cuda(), dataLoaderTrain, optimizer, scheduler, trMaxEpoch, nnClassCount, loss, epochID)
+            lossVal, losstensor = ChexnetTrainer.epochVal (torch.nn.DataParallel(model).cuda(), dataLoaderVal, optimizer, scheduler, trMaxEpoch, nnClassCount, loss)
             
             timestampTime = time.strftime("%H%M%S")
             timestampDate = time.strftime("%d%m%Y")
             timestampEND = timestampDate + '-' + timestampTime
             
-            scheduler.step(losstensor.data[0])
+            # scheduler.step(losstensor.data[0])
+            scheduler.step(losstensor)
             
             if lossVal < lossMIN:
                 lossMIN = lossVal    
@@ -109,7 +119,7 @@ class ChexnetTrainer ():
                      
     #-------------------------------------------------------------------------------- 
        
-    def epochTrain (model, dataLoader, optimizer, scheduler, epochMax, classCount, loss):
+    def epochTrain (model, dataLoader, optimizer, scheduler, epochMax, classCount, loss, epoch, display=100):
         
         model.train()
         
@@ -126,6 +136,9 @@ class ChexnetTrainer ():
             optimizer.zero_grad()
             lossvalue.backward()
             optimizer.step()
+            if batchID%100 == 0:
+                print('Epoch: [{0}][{1}/{2}]\tLoss:{loss:.4f}'.format(epoch, batchID, len(dataLoader), loss=lossvalue.data))
+
             
     #-------------------------------------------------------------------------------- 
         
@@ -142,14 +155,20 @@ class ChexnetTrainer ():
             
             target = target.cuda(async=True)
                  
-            varInput = torch.autograd.Variable(input, volatile=True)
-            varTarget = torch.autograd.Variable(target, volatile=True)    
-            varOutput = model(varInput)
+            # varInput = torch.autograd.Variable(input, volatile=True)
+            # varTarget = torch.autograd.Variable(target, volatile=True)    
+            # varOutput = model(varInput)
+            
+            varOutput = model(torch.autograd.Variable(input.cuda()))
+            varTarget = torch.autograd.Variable(target.cuda())
+
             
             losstensor = loss(varOutput, varTarget)
-            losstensorMean += losstensor
+            # losstensorMean += losstensor
+            losstensorMean += losstensor.data
             
-            lossVal += losstensor.data[0]
+            # lossVal += losstensor.data[0]
+            lossVal += losstensor.data
             lossValNorm += 1
             
         outLoss = lossVal / lossValNorm
@@ -206,7 +225,7 @@ class ChexnetTrainer ():
         elif nnArchitecture == 'DENSE-NET-169': model = DenseNet169(nnClassCount, nnIsTrained).cuda()
         elif nnArchitecture == 'DENSE-NET-201': model = DenseNet201(nnClassCount, nnIsTrained).cuda()
         
-        model = torch.nn.DataParallel(model).cuda() 
+        # model = torch.nn.DataParallel(model).cuda() 
         
         modelCheckpoint = torch.load(pathModel)
         model.load_state_dict(modelCheckpoint['state_dict'])

@@ -5,17 +5,25 @@ import sys
 
 from ChexnetTrainer import ChexnetTrainer
 
+import fire
+
 #-------------------------------------------------------------------------------- 
 
 def main ():
     
-    runTest()
+    fire.Fire()
+    # runTest()
     #runTrain()
   
 #--------------------------------------------------------------------------------   
 
 def runTrain():
     
+    with open(config_file,encoding='gb2312') as f:
+        config = json.load(f)
+
+    
+
     DENSENET121 = 'DENSE-NET-121'
     DENSENET169 = 'DENSE-NET-169'
     DENSENET201 = 'DENSE-NET-201'
@@ -41,12 +49,16 @@ def runTrain():
     nnClassCount = 14
     
     #---- Training settings: batch size, maximum number of epochs
-    trBatchSize = 16
-    trMaxEpoch = 100
+    # trBatchSize = 32
+    # trMaxEpoch = 100
+    trBatchSize = config['batch_size']
+    trMaxEpoch = config['epoch']
     
     #---- Parameters related to image transforms: size of the down-scaled image, cropped image
-    imgtransResize = 256
-    imgtransCrop = 224
+    # imgtransResize = 256
+    # imgtransCrop = 224
+    imgtransResize = config['scale']
+    imgtransCrop = config['scale']
         
     pathModel = 'm-' + timestampLaunch + '.pth.tar'
     

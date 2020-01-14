@@ -24,6 +24,7 @@ class DatasetGenerator (Dataset):
         #---- get into the loop
         line = True
         
+        cnt = 0
         while line:
                 
             line = fileDescriptor.readline()
@@ -33,13 +34,21 @@ class DatasetGenerator (Dataset):
           
                 lineItems = line.split()
                 
-                imagePath = os.path.join(pathImageDirectory, lineItems[0])
+                filepath = lineItems[0].replace('/000', '/images/000')
+                imagePath = os.path.join(pathImageDirectory, filepath)
+                # imagePath = os.path.join(pathImageDirectory, lineItems[0])
                 imageLabel = lineItems[1:]
                 imageLabel = [int(i) for i in imageLabel]
                 
+                # cnt += 1
+                # if cnt > 500:
+                #     break
+
                 self.listImagePaths.append(imagePath)
                 self.listImageLabels.append(imageLabel)   
-            
+
+        # self.listImagePaths = self.listImagePaths[:400]
+        # self.listImageLabels = self.listImageLabels[:400]
         fileDescriptor.close()
     
     #-------------------------------------------------------------------------------- 

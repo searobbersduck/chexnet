@@ -49,3 +49,45 @@ The highest accuracy 0.8508 was achieved by the model m-25012018-123527 (see the
 ## Computation time
 The training was done using single Tesla P100 GPU and took approximately 22h.
 
+
+
+## 修改记录
+
+### dataset
+链接数据：`ln -s /data/zhangwd/data/NIH_dataset/Data database`
+
+目录结构：`tree database -L 2`, 如下：
+```
+database
+├── images_001
+│   └── images
+├── images_002
+│   └── images
+├── images_003
+│   └── images
+├── images_004
+│   └── images
+├── images_005
+│   └── images
+├── images_006
+│   └── images
+├── images_007
+│   └── images
+├── images_008
+│   └── images
+├── images_009
+│   └── images
+├── images_010
+│   └── images
+├── images_011
+│   └── images
+└── images_012
+    └── images
+```
+
+### 配置文件
+`./config_dr_dr.json`
+
+
+### 生成heatmap
+调用`.gen_heatmap.sh`
