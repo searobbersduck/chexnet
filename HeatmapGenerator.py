@@ -12,13 +12,18 @@ import torch.backends.cudnn as cudnn
 import torchvision
 import torchvision.transforms as transforms
 
-from DensenetModels import DenseNet121
-from DensenetModels import DenseNet169
-from DensenetModels import DenseNet201
+# from DensenetModels import DenseNet121
+# from DensenetModels import DenseNet169
+# from DensenetModels import DenseNet201
+
+from DensenetModelsLocal import DenseNet121
+from DensenetModelsLocal import DenseNet169
+from DensenetModelsLocal import DenseNet201
 
 import fire
 from glob import glob
 import shutil
+import json
 
 #-------------------------------------------------------------------------------- 
 #---- Class to generate heatmaps (CAM)
@@ -34,7 +39,7 @@ class HeatmapGenerator ():
     def __init__ (self, pathModel, nnArchitecture, nnClassCount, transCrop):
        
         #---- Initialize the network
-        if nnArchitecture == 'DENSE-NET-121': model = DenseNet121(nnClassCount, True).cuda()
+        if nnArchitecture == 'DENSE-NET-121': model = DenseNet121(transCrop, nnClassCount, True).cuda()
         elif nnArchitecture == 'DENSE-NET-169': model = DenseNet169(nnClassCount, True).cuda()
         elif nnArchitecture == 'DENSE-NET-201': model = DenseNet201(nnClassCount, True).cuda()
           
@@ -54,7 +59,7 @@ class HeatmapGenerator ():
         #---- Initialize the image transform - resize + normalize
         normalize = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         transformList = []
-        transformList.append(transforms.Resize(transCrop))
+        transformList.append(transforms.Resize([transCrop,transCrop]))
         transformList.append(transforms.ToTensor())
         transformList.append(normalize)      
         
@@ -100,6 +105,10 @@ class HeatmapGenerator ():
 
 def genHeatmap(pathInputImages, outDir, model_weights):
     os.makedirs(outDir, exist_ok=True)
+
+    config_file = './config_dr_dr.json'
+    with open(config_file,encoding='gb2312') as f:
+        config = json.load(f)
     # pathInputImage = 'test/00009285_000.png'
     # pathInputImage = pathInputImage
     # pathOutputImage = 'test/heatmap1.png'
@@ -109,7 +118,9 @@ def genHeatmap(pathInputImages, outDir, model_weights):
     nnArchitecture = 'DENSE-NET-121'
     nnClassCount = 14
 
-    transCrop = 224
+
+    transCrop = config['scale']
+    # transCrop = 224
 
     for pathInputImage in pathInputImages:
         print('====> processing {}'.format(pathInputImage))
@@ -120,7 +131,7 @@ def genHeatmap(pathInputImages, outDir, model_weights):
 
 def genHeatmapByFolder(infolder, outfolder, model_weights):
     # infolder = '/data/zhangwd/data/xray/dr_deformable_1024/气胸/气胸_pos_train'
-    images_list = glob(os.path.join(infolder, '*.jpg'))
+    images_list = glob(os.path.join(infolder, '*.png'))
     genHeatmap(images_list, outfolder, model_weights)
 
 if __name__ == '__main__':

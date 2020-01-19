@@ -6,6 +6,7 @@ import sys
 from ChexnetTrainer import ChexnetTrainer
 
 import fire
+import json
 
 #-------------------------------------------------------------------------------- 
 
@@ -19,6 +20,7 @@ def main ():
 
 def runTrain():
     
+    config_file = './config_dr_dr.json'
     with open(config_file,encoding='gb2312') as f:
         config = json.load(f)
 
@@ -72,16 +74,23 @@ def runTrain():
 
 def runTest():
     
+    config_file = './config_dr_dr.json'
+    with open(config_file,encoding='gb2312') as f:
+        config = json.load(f)
+
     pathDirData = './database'
     pathFileTest = './dataset/test_1.txt'
     nnArchitecture = 'DENSE-NET-121'
     nnIsTrained = True
     nnClassCount = 14
-    trBatchSize = 16
-    imgtransResize = 256
+    # trBatchSize = 16
+    # imgtransResize = 256
     imgtransCrop = 224
+    trBatchSize = config['batch_size']
+    imgtransResize = config['scale']
+    # imgtransCrop = config['scale']
     
-    pathModel = './models/m-25012018-123527.pth.tar'
+    pathModel = 'm-14012020-150303.pth.tar'
     
     timestampLaunch = ''
     

@@ -89,5 +89,8 @@ database
 `./config_dr_dr.json`
 
 
+### 训练
+调用脚本`./train.sh`，执行脚本大约5~7个epoch，会得到不错的模型
+
 ### 生成heatmap
 调用`.gen_heatmap.sh`

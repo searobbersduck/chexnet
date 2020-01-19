@@ -1,1 +1,2 @@
-CUDA_VISIBLE_DEVICES=7 python HeatmapGenerator.py genHeatmapByFolder "/data/zhangwd/data/xray/dr_deformable_1024/胸腔积液/胸腔积液_pos_train" ./out ./m-14012020-130918.pth.tar
+# CUDA_VISIBLE_DEVICES=7 python HeatmapGenerator.py genHeatmapByFolder "/data/zhangwd/data/xray/dr_deformable_1024/胸腔积液/胸腔积液_pos_train" ./out ./m-15012020-084229.pth.tar
+CUDA_VISIBLE_DEVICES=3 python HeatmapGenerator.py genHeatmapByFolder ./database/images_001/images/ ./out ./m-15012020-084229.pth.tar

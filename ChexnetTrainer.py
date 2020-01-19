@@ -183,12 +183,24 @@ class ChexnetTrainer ():
     #---- dataPRED - predicted data
     #---- classCount - number of classes
     
-    def computeAUROC (dataGT, dataPRED, classCount):
+    # def computeAUROC (dataGT, dataPRED, classCount):
         
+    #     outAUROC = []
+        
+    #     datanpGT = dataGT.cpu().numpy()
+    #     datanpPRED = dataPRED.cpu().numpy()
+        
+    #     for i in range(classCount):
+    #         outAUROC.append(roc_auc_score(datanpGT[:, i], datanpPRED[:, i]))
+            
+    #     return outAUROC
+
+    def computeAUROC (dataGT, dataPRED, classCount):
+            
         outAUROC = []
         
-        datanpGT = dataGT.cpu().numpy()
-        datanpPRED = dataPRED.cpu().numpy()
+        datanpGT = dataGT
+        datanpPRED = dataPRED
         
         for i in range(classCount):
             outAUROC.append(roc_auc_score(datanpGT[:, i], datanpPRED[:, i]))
@@ -221,7 +233,7 @@ class ChexnetTrainer ():
         cudnn.benchmark = True
         
         #-------------------- SETTINGS: NETWORK ARCHITECTURE, MODEL LOAD
-        if nnArchitecture == 'DENSE-NET-121': model = DenseNet121(nnClassCount, nnIsTrained).cuda()
+        if nnArchitecture == 'DENSE-NET-121': model = DenseNet121(transCrop, nnClassCount, nnIsTrained).cuda()
         elif nnArchitecture == 'DENSE-NET-169': model = DenseNet169(nnClassCount, nnIsTrained).cuda()
         elif nnArchitecture == 'DENSE-NET-201': model = DenseNet201(nnClassCount, nnIsTrained).cuda()
         
@@ -244,25 +256,39 @@ class ChexnetTrainer ():
         datasetTest = DatasetGenerator(pathImageDirectory=pathDirData, pathDatasetFile=pathFileTest, transform=transformSequence)
         dataLoaderTest = DataLoader(dataset=datasetTest, batch_size=trBatchSize, num_workers=8, shuffle=False, pin_memory=True)
         
-        outGT = torch.FloatTensor().cuda()
-        outPRED = torch.FloatTensor().cuda()
+        # outGT = torch.FloatTensor().cuda()
+        # outPRED = torch.FloatTensor().cuda()
        
+        outGT = []
+        outPRED = []
+
         model.eval()
         
         for i, (input, target) in enumerate(dataLoaderTest):
             
             target = target.cuda()
-            outGT = torch.cat((outGT, target), 0)
+            # outGT = torch.cat((outGT, target), 0)
             
             bs, n_crops, c, h, w = input.size()
+            print(input.size())
             
-            varInput = torch.autograd.Variable(input.view(-1, c, h, w).cuda(), volatile=True)
+            # varInput = torch.autograd.Variable(input.view(-1, c, h, w).cuda(), volatile=True)
+            varInput = torch.autograd.Variable(input.view(-1, c, h, w).cuda())
             
             out = model(varInput)
             outMean = out.view(bs, n_crops, -1).mean(1)
             
-            outPRED = torch.cat((outPRED, outMean.data), 0)
+            # outPRED = torch.cat((outPRED, outMean.data), 0)
+            
+            # print(outGT.shape)
+            # print(target.cpu().numpy().shape)
+            outGT.append(target.cpu().numpy())
+            outPRED.append(outMean.data.cpu().numpy())
+            # outGT = np.append(outGT, target.cpu().numpy())
+            # outPRED = np.append(outPRED, outMean.data.cpu().numpy())
 
+        outGT = np.concatenate(outGT)
+        outPRED = np.concatenate(outPRED)
         aurocIndividual = ChexnetTrainer.computeAUROC(outGT, outPRED, nnClassCount)
         aurocMean = np.array(aurocIndividual).mean()
         
